@@ -1,21 +1,23 @@
 import React from 'react';
-import { User, Clock, Phone, Mail, MapPin } from 'lucide-react';
-import { MenuItem } from '../App';
+import { User, Clock, Phone, Mail, MapPin, Wifi, Users } from 'lucide-react';
+import { MenuItem } from '../lib/supabase';
+import { useRecentUpdates } from '../hooks/useRecentUpdates';
 
 interface HomepageProps {
-  allItems: MenuItem[];
-  availableItems: number[];
+  menuItems: MenuItem[];
   lastUpdated: Date;
   onAdminLogin: () => void;
+  isConnected: boolean;
 }
 
 const Homepage: React.FC<HomepageProps> = ({
-  allItems,
-  availableItems,
+  menuItems,
   lastUpdated,
-  onAdminLogin
+  onAdminLogin,
+  isConnected
 }) => {
-  const availableMenuItems = allItems.filter(item => availableItems.includes(item.id));
+  const { updates } = useRecentUpdates(5);
+  const availableMenuItems = menuItems.filter(item => item.is_available);
   
   const groupedItems = availableMenuItems.reduce((acc, item) => {
     if (!acc[item.category]) {
@@ -45,6 +47,16 @@ const Homepage: React.FC<HomepageProps> = ({
             <div>
               <h1 className="text-4xl font-bold tracking-wide">Forester Canteen</h1>
               <p className="text-green-200 mt-1 text-lg">Proprietor: Hari Maruthi</p>
+              <div className="flex items-center gap-4 mt-2">
+                <div className="flex items-center gap-1 text-green-200 text-sm">
+                  <Wifi size={14} />
+                  <span>{isConnected ? 'Live Updates' : 'Offline'}</span>
+                </div>
+                <div className="flex items-center gap-1 text-green-200 text-sm">
+                  <Users size={14} />
+                  <span>Multi-Admin System</span>
+                </div>
+              </div>
             </div>
             <button
               onClick={onAdminLogin}
@@ -72,6 +84,7 @@ const Homepage: React.FC<HomepageProps> = ({
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-green-800 mb-2">Today's Available Items</h2>
           <div className="w-24 h-1 bg-green-600 mx-auto rounded"></div>
+          <p className="text-green-600 mt-2 text-sm">Updates automatically in real-time</p>
         </div>
 
         {availableMenuItems.length === 0 ? (
@@ -101,6 +114,11 @@ const Homepage: React.FC<HomepageProps> = ({
                         </div>
                         <div className="p-4">
                           <h4 className="font-semibold text-gray-800 text-center">{item.name}</h4>
+                          <div className="flex items-center justify-center mt-2">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              Available Now
+                            </span>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -111,6 +129,39 @@ const Homepage: React.FC<HomepageProps> = ({
           </div>
         )}
       </main>
+
+      {/* Recent Updates Section */}
+      {updates.length > 0 && (
+        <section className="bg-white border-t border-gray-200">
+          <div className="max-w-6xl mx-auto px-4 py-8">
+            <div className="text-center mb-6">
+              <h3 className="text-2xl font-bold text-green-800 mb-2">Recent Updates</h3>
+              <div className="w-16 h-1 bg-green-600 mx-auto rounded"></div>
+            </div>
+            <div className="space-y-3">
+              {updates.slice(0, 5).map((update) => (
+                <div key={update.id} className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${
+                      update.action === 'added' ? 'bg-green-500' : 'bg-red-500'
+                    }`}></div>
+                    <span className="text-gray-800">
+                      <strong>{update.item_name}</strong> was {update.action === 'added' ? 'added to' : 'removed from'} menu
+                    </span>
+                  </div>
+                  <div className="text-right text-sm text-gray-500">
+                    <div>by {update.admin_name}</div>
+                    <div>{new Date(update.created_at).toLocaleTimeString('en-IN', { 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    })}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Contact Section */}
       <footer className="bg-green-800 text-white mt-16">
