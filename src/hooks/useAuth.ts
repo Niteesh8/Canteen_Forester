@@ -43,11 +43,18 @@ export const useAuth = () => {
         .eq('is_active', true)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching admin profile:', error);
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No admin profile found - this is expected for new signups
+          console.log('No admin profile found for user:', userId);
+        } else {
+          console.error('Error fetching admin profile:', error);
+        }
+        setAdmin(null);
+      } else {
+        setAdmin(data);
       }
       
-      setAdmin(data || null);
     } catch (err) {
       console.error('Error fetching admin profile:', err);
       setAdmin(null);

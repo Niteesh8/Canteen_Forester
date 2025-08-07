@@ -17,7 +17,14 @@ function App() {
 
   const handleLogin = (success: boolean) => {
     if (success) {
-      setCurrentView('admin');
+      // Wait a moment for the auth state to update
+      setTimeout(() => {
+        if (isAuthenticated) {
+          setCurrentView('admin');
+        } else {
+          console.log('Authentication not complete, staying on login');
+        }
+      }, 1000);
     }
   };
 

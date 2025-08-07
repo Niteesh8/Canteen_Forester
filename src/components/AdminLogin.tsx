@@ -35,7 +35,10 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onBack, onSignIn, onSi
       }
 
       if (result.success) {
-        onLogin(true);
+        // Wait for auth state to update before calling onLogin
+        setTimeout(() => {
+          onLogin(true);
+        }, 500);
       } else {
         setError(result.error || 'Authentication failed');
         onLogin(false);
