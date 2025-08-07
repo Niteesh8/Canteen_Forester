@@ -8,7 +8,7 @@ import { useMenuItems } from './hooks/useMenuItems';
 
 function App() {
   const [currentView, setCurrentView] = useState<'home' | 'login' | 'admin'>('home');
-  const { user, admin, loading: authLoading, signIn, signUp, signOut, isAuthenticated } = useAuth();
+  const { user, admin, loading: authLoading, error: authError, signIn, signUp, signOut, isAuthenticated } = useAuth();
   const { menuItems, loading: menuLoading, error: menuError, lastUpdated, updateItemAvailability } = useMenuItems();
 
   // Check if Supabase is configured
@@ -45,11 +45,30 @@ function App() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
           <p className="text-green-800 font-medium">Loading Forester Canteen...</p>
+          <p className="text-green-600 text-sm mt-2">This should only take a few seconds</p>
         </div>
       </div>
     );
   }
 
+  // Show auth error if there's one
+  if (authError && !isSupabaseConfigured) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center px-4">
+        <div className="bg-white rounded-lg shadow-xl p-8 max-w-md text-center">
+          <AlertCircle className="mx-auto text-red-500 mb-4" size={48} />
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Authentication Error</h2>
+          <p className="text-gray-600 mb-4">{authError}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
   // Show Supabase connection required message
   if (!isSupabaseConfigured) {
     return (
