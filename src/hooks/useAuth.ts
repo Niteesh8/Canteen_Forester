@@ -63,6 +63,8 @@ export const useAuth = () => {
   const fetchAdminProfile = async (userId: string) => {
     try {
       setError(null);
+      console.log('Fetching admin profile for user ID:', userId);
+      
       const { data, error } = await supabase
         .from('admins')
         .select('*')
@@ -70,24 +72,27 @@ export const useAuth = () => {
         .eq('is_active', true)
         .single();
 
+      console.log('Admin profile query result:', { data, error });
+
       if (error) {
         if (error.code === 'PGRST116') {
           // No admin profile found - this is expected for new signups
           console.log('No admin profile found for user:', userId);
-          setError('No admin profile found. Please contact administrator.');
+          setError('No admin profile found. This might be a new account that needs approval.');
         } else {
           console.error('Error fetching admin profile:', error);
-          setError(`Profile error: ${error.message}`);
+          setError(`Database error: ${error.message} (Code: ${error.code})`);
         }
         setAdmin(null);
       } else {
+        console.log('Admin profile loaded successfully:', data);
         setAdmin(data);
         setError(null);
       }
       
     } catch (err) {
       console.error('Error fetching admin profile:', err);
-      setError('Failed to fetch admin profile');
+      setError(`Network error: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setAdmin(null);
     } finally {
       setLoading(false);
@@ -114,15 +119,21 @@ export const useAuth = () => {
 
   const signUp = async (email: string, password: string, name: string) => {
     try {
+      console.log('Starting signup process for:', email);
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password
       });
 
       if (error) throw error;
+      
+      console.log('Auth signup successful:', data.user?.id);
 
       // Create admin profile
       if (data.user) {
+        console.log('Creating admin profile for user:', data.user.id);
+        
         const { error: profileError } = await supabase
           .from('admins')
           .insert({
@@ -132,11 +143,17 @@ export const useAuth = () => {
             role: 'admin'
           });
 
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error('Error creating admin profile:', profileError);
+          throw profileError;
+        }
+        
+        console.log('Admin profile created successfully');
       }
 
       return { success: true, user: data.user };
     } catch (err) {
+      console.error('Signup error:', err);
       return { 
         success: false, 
         error: err instanceof Error ? err.message : 'Registration failed' 
